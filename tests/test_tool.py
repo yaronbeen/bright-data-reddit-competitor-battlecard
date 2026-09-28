@@ -42,6 +42,28 @@ def test_requires_explicit_names_and_ignores_unrelated_proper_nouns():
     assert rows[0]["compared_with"] == "Beta"
     assert rows[0]["source_url"] == record["url"]
 
+def test_comparison_evidence_requires_canonical_reddit_post_urls():
+    base={"text":"Acme pricing is cheaper than Beta.","competitors":["Acme","Beta"]}
+    credentialed_url="https://"+"user"+":"+"pass"+"@www.reddit.com/r/x/comments/1/post/"
+    invalid_urls=(
+        "https://www.reddit.com.evil.example/r/x/comments/1/post/",
+        credentialed_url,
+        "https://www.reddit.com/r/x/about/",
+        "https://www.reddit.com:443/r/x/comments/1/post/",
+    )
+    for url in invalid_urls:
+        try: tool.compare([{**base,"url":url}])
+        except ValueError: pass
+        else: assert False, f"noncanonical evidence URL was accepted: {url}"
+    valid={**base,"url":"https://www.reddit.com/r/x/comments/1/post/"}
+    assert tool.compare([valid])[0]["source_url"]==valid["url"]
+
+def test_invalid_collected_source_url_cannot_override_valid_post_url():
+    record={"url":"https://www.reddit.com/r/x/comments/1/post/","source_url":"https://www.reddit.com.evil.example/r/x/comments/1/post/","text":"Acme pricing beats Beta","competitors":["Acme","Beta"]}
+    try: tool.compare([record])
+    except ValueError: pass
+    else: assert False, "malicious comment source URL must be rejected"
+
 def test_comment_mapping_preserves_original_url_for_multiple_posts():
     urls=["https://www.reddit.com/r/x/comments/1/first/","https://www.reddit.com/r/x/comments/2/second/"]
     rows=tool.map_comments_to_posts([{"post_url":urls[0],"url":"https://www.reddit.com/r/x/comments/1/first/comment/c1","body":"Acme cheaper Beta"},{"post_url":urls[1],"url":"https://www.reddit.com/r/x/comments/2/second/comment/c2","body":"Acme pricing vs Beta"}],urls)

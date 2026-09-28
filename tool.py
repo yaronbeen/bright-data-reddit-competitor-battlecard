@@ -36,7 +36,7 @@ def collect_comments(urls, key):
 def valid_post_url(url):
     try: parts=urllib.parse.urlsplit(url)
     except (TypeError,ValueError): return False
-    return parts.scheme=="https" and parts.hostname=="www.reddit.com" and "/comments/" in parts.path and not parts.username and not parts.password
+    return parts.scheme=="https" and parts.netloc=="www.reddit.com" and bool(re.fullmatch(r"/r/[A-Za-z0-9_]+/comments/[A-Za-z0-9]+(?:/[^/]+)?/?",parts.path))
 
 def aliases_for(competitors):
     if isinstance(competitors,dict): competitors=[{"name":name,"aliases":aliases if isinstance(aliases,list) else []} for name,aliases in competitors.items()]
@@ -52,12 +52,13 @@ def aliases_for(competitors):
 def compare(records):
     rows=[]
     for r in records:
+        source=r.get("source_url") or r.get("url")
+        if not valid_post_url(source): raise ValueError("Every comparison record requires a canonical Reddit post evidence URL")
         text=r.get("text",""); found=[]
         for competitor in aliases_for(r.get("competitors",[])):
             if any(re.search(r"(?<!\w)"+re.escape(alias)+r"(?!\w)",text,re.I) for alias in competitor["aliases"]): found.append(competitor["name"])
         matched=[label for label,pattern in PATTERNS if re.search(pattern,text,re.I)]
-        source=r.get("source_url") or r.get("url")
-        if len(found)>=2 and matched and isinstance(source,str) and source.startswith("https://www.reddit.com/"):
+        if len(found)>=2 and matched:
             rows.append({"competitor":found[0],"compared_with":found[1],"observed_dimensions":matched,"quoted_evidence":text,"source_url":source})
     return rows
 def main(argv=None):
