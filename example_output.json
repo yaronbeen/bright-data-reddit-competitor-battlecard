@@ -1,0 +1,29 @@
+{
+  "comparison_matrix": [
+    {
+      "competitor": "Acme",
+      "compared_with": "Northstar",
+      "observed_dimensions": [
+        "cost",
+        "integrations"
+      ],
+      "quoted_evidence": "We switched from Acme to Northstar. Northstar costs less, but Acme has better integrations.",
+      "source_url": "https://www.reddit.com/r/saas/comments/a1/compare/"
+    },
+    {
+      "competitor": "Acme",
+      "compared_with": "Northstar",
+      "observed_dimensions": [
+        "ease_of_use",
+        "reporting"
+      ],
+      "quoted_evidence": "Acme vs Northstar: Northstar is easier to set up; Acme has more reporting.",
+      "source_url": "https://www.reddit.com/r/startups/comments/b2/tools/"
+    }
+  ],
+  "decision": "Review supported claims before updating a sales battlecard.",
+  "limits": [
+    "Only explicit comparative statements in the curated sample are surfaced.",
+    "Not market-wide prevalence, verified product truth, lead discovery, or outreach."
+  ]
+}
