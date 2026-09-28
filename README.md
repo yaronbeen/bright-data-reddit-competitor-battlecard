@@ -18,7 +18,14 @@ python3 tool.py curated_comparisons.json battlecard.json
 python3 -m pytest -q
 ```
 
-Records are JSON objects containing a canonical public Reddit `url`, curated `text`, and optional `competitors` list. The offline tool performs no network calls. `--live` currently fails closed; collect only those curated public URLs using an explicitly reviewed workflow and provide the selected records. Current Bright Data docs document Posts dataset `gd_lvz8ah06191smkebj4`, Comments dataset `gd_lvzdpsdlw09j6t702`, and up to 20 URL inputs for sync collection ([Reddit API](https://docs.brightdata.com/products/scrapers/reddit/introduction)). Comments collection is billable and is intentionally not triggered by this CLI.
+Offline records are JSON objects containing a canonical public Reddit `url`, curated `text`, and optional `competitors` list. For live mode, provide JSON records with the selected post URLs; the CLI collects public comments for those URLs, at most 20 per synchronous request:
+
+```bash
+python3 tool.py curated_comparisons.json battlecard.json --live --dry-run
+BRIGHT_DATA_API_KEY="your-key" python3 tool.py curated_comparisons.json battlecard.json --live
+```
+
+The current [Bright Data Reddit API docs](https://docs.brightdata.com/products/scrapers/reddit/introduction) document Comments dataset `gd_lvzdpsdlw09j6t702`, URL collection, sync requests up to 20 URLs, and pay-per-successful-record pricing. If Bright Data returns `202`, the tool reports the snapshot response rather than treating it as comments. Live collection is opt-in and may incur charges; no live request runs in tests or CI.
 
 ## Outputs and caveats
 
