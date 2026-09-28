@@ -78,6 +78,45 @@ def test_comment_mapping_preserves_original_url_for_multiple_posts():
     rows=tool.map_comments_to_posts([{"post_url":urls[0],"url":"https://www.reddit.com/r/x/comments/1/first/comment/c1","body":"Acme cheaper Beta"},{"post_url":urls[1],"url":"https://www.reddit.com/r/x/comments/2/second/comment/c2","body":"Acme pricing vs Beta"}],urls)
     assert [r["source_url"] for r in rows] == urls
 
+def test_duplicate_provider_comment_ids_and_permalink_rows_fail_closed():
+    post="https://www.reddit.com/r/x/comments/1/first/"
+    duplicate_rows=(
+        [{"post_url":post,"comment_id":"c1","url":"https://www.reddit.com/r/x/comments/1/first/c1/","body":"Acme cheaper than Beta"},{"post_url":post,"comment_id":"c1","url":"https://www.reddit.com/r/x/comments/1/first/c1-copy/","body":"Acme cheaper than Beta"}],
+        [{"post_url":post,"url":"https://www.reddit.com/r/x/comments/1/first/c1/","body":"Acme cheaper than Beta"},{"post_url":post,"url":"https://www.reddit.com/r/x/comments/1/first/c1/","body":"Acme cheaper than Beta"}],
+        [{"post_url":post,"body":"Acme cheaper than Beta","created_at":"2026-01-01T00:00:00Z"},{"post_url":post,"body":"Acme cheaper than Beta","created_at":"2026-01-01T00:00:00Z"}],
+    )
+    for rows in duplicate_rows:
+        try: tool.map_comments_to_posts(rows,[post])
+        except tool.BrightDataError as e: assert e.code=="duplicate_comment"
+        else: assert False,"duplicate comment evidence must be rejected"
+
+def test_comment_without_stable_identity_fails_closed():
+    post="https://www.reddit.com/r/x/comments/1/first/"
+    try: tool.map_comments_to_posts([{"post_url":post,"body":"Acme cheaper than Beta"}],[post])
+    except tool.BrightDataError as e: assert e.code=="unstable_comment"
+    else: assert False,"comment without an ID, permalink, or stable content key must not be emitted"
+
+def test_distinct_comment_ids_remain_distinct_and_are_cited():
+    post="https://www.reddit.com/r/x/comments/1/first/"
+    comments=tool.map_comments_to_posts([{"post_url":post,"comment_id":"c1","body":"Acme cheaper than Beta"},{"post_url":post,"comment_id":"c2","body":"Acme cheaper than Beta"}],[post])
+    rows=tool.compare([{**c,"competitors":["Acme","Beta"]} for c in comments],allow_multiple_comments=True)
+    assert len(rows)==2
+    assert [row["comment_id"] for row in rows]==["c1","c2"]
+    assert all(row["source_url"]==post for row in rows)
+
+def test_offline_compare_rejects_repeated_user_evidence_url():
+    record={"url":"https://www.reddit.com/r/x/comments/1/post/","text":"Acme pricing is cheaper than Beta.","competitors":["Acme","Beta"]}
+    try: tool.compare([record,dict(record)])
+    except ValueError: pass
+    else: assert False,"offline comparison must not emit repeated post evidence"
+
+def test_duplicate_comment_url_is_caught_even_if_provider_ids_disagree():
+    post="https://www.reddit.com/r/x/comments/1/first/"; comment="https://www.reddit.com/r/x/comments/1/first/c1/"
+    rows=[{"post_url":post,"comment_id":"id-a","url":comment,"body":"Acme cheaper than Beta"},{"post_url":post,"comment_id":"id-b","url":comment,"body":"Acme cheaper than Beta"}]
+    try: tool.map_comments_to_posts(rows,[post])
+    except tool.BrightDataError as e: assert e.code=="duplicate_comment"
+    else: assert False,"permalink collision must fail even with differing IDs"
+
 def test_ambiguous_multi_url_comment_response_is_rejected():
     urls=["https://www.reddit.com/r/x/comments/1/first/","https://www.reddit.com/r/x/comments/2/second/"]
     try: tool.map_comments_to_posts([{"url":"https://www.reddit.com/r/x/comments/1/comment/c1","body":"Acme cheaper Beta"}],urls)
@@ -115,3 +154,12 @@ def test_live_dry_run_needs_no_key_and_makes_no_request(monkeypatch,capsys):
     monkeypatch.setattr(tool.urllib.request,"urlopen",lambda *a,**k:(_ for _ in ()).throw(AssertionError("network called")))
     assert tool.main(["curated_comparisons.json","--live","--dry-run"])==0
     assert json.loads(capsys.readouterr().out)["live_calls"]==0
+
+def test_cli_rejects_duplicate_post_urls_before_any_live_request(monkeypatch,tmp_path,capsys):
+    monkeypatch.setattr(tool.urllib.request,"urlopen",lambda *a,**k:(_ for _ in ()).throw(AssertionError("network called")))
+    post="https://www.reddit.com/r/x/comments/1/post/"
+    source=tmp_path/"duplicate.json"
+    source.write_text(json.dumps({"competitors":["Acme","Beta"],"posts":[{"url":post},{"url":post}]}))
+    for args in ((str(source),"--live","--dry-run"),(str(source),)):
+        assert tool.main(list(args))==1
+        assert "unique" in capsys.readouterr().err

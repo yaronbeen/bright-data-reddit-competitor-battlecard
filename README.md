@@ -25,7 +25,7 @@ python3 tool.py curated_comparisons.json battlecard.json --live --dry-run
 BRIGHT_DATA_API_KEY="your-key" python3 tool.py curated_comparisons.json battlecard.json --live
 ```
 
-The current [Bright Data Reddit API docs](https://docs.brightdata.com/products/scrapers/reddit/introduction) document Comments dataset `gd_lvzdpsdlw09j6t702`, URL collection, sync requests up to 20 URLs, and pay-per-successful-record pricing. When multi-URL comment records lack a parent post URL that maps to a requested URL, the CLI rejects the response instead of assigning an uncertain source. A `202` snapshot is reported as structured error; no retries occur. Live collection is opt-in and may incur charges; no live request runs in tests or CI.
+The current [Bright Data Reddit API docs](https://docs.brightdata.com/products/scrapers/reddit/introduction) document Comments dataset `gd_lvzdpsdlw09j6t702`, URL collection, sync requests up to 20 URLs, and pay-per-successful-record pricing. User-supplied post URLs must be unique in offline and live input; duplicates fail before a request or output. Provider comments are deduplicated by comment ID and permalink, or by a documented-in-output content key from parent post URL, normalized body, and timestamp when IDs/links are absent. Duplicate identities or records lacking a stable identity fail closed. When multi-URL comment records lack a parent post URL that maps to a requested URL, the CLI rejects the response instead of assigning an uncertain source. A `202` snapshot is reported as structured error; no retries occur. Live collection is opt-in and may incur charges; no live request runs in tests or CI.
 
 ## Outputs and caveats
 
