@@ -23,7 +23,7 @@
   ],
   "decision": "Review supported claims before updating a sales battlecard.",
   "limits": [
-    "Only explicit comparative statements in the curated sample are surfaced.",
+    "Only explicit comparative statements among user-named competitors in the curated sample are surfaced.",
     "Not market-wide prevalence, verified product truth, lead discovery, or outreach."
   ]
 }
