@@ -4,7 +4,7 @@ Turn a marketer-curated set of public Reddit comparison/recommendation URLs and 
 
 ## Who, why, decision
 
-For product marketing and sales enablement teams who already know which competitors and public discussions they want reviewed. Input records use `url`, `text`, and an explicit `competitors` list (names or `{name, aliases}` records). Name matching uses only those supplied names/aliases; capitalization is never used to guess companies. Source links must be HTTPS `www.reddit.com/r/<subreddit>/comments/<post-id>` permalinks with the exact Reddit host, no credentials, and no port. The same validation applies to offline input and collected comment evidence; invalid links fail closed. Each comparison row retains the validated canonical source post URL.
+For product marketing and sales enablement teams who already know which competitors and public discussions they want reviewed. Input records use `url`, `text`, and an explicit `competitors` list (names or `{name, aliases}` records). Name matching uses only those supplied names/aliases; capitalization is never used to guess companies. Source links must be HTTPS `www.reddit.com/r/<subreddit>/comments/<post-id>/<slug>` permalinks with a valid subreddit, alphanumeric post ID, and nonempty URL-safe title slug. The exact host is required; credentials, ports, query strings, and fragments are rejected. The same validation applies to offline input and collected comment evidence; invalid links fail closed. Each comparison row retains the validated source post URL.
 
 ## Workflow and synthetic example
 

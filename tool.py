@@ -34,9 +34,11 @@ def collect_comments(urls, key):
         return map_comments_to_posts(result,urls)
 
 def valid_post_url(url):
+    if not isinstance(url,str) or "?" in url or "#" in url: return False
     try: parts=urllib.parse.urlsplit(url)
     except (TypeError,ValueError): return False
-    return parts.scheme=="https" and parts.netloc=="www.reddit.com" and bool(re.fullmatch(r"/r/[A-Za-z0-9_]+/comments/[A-Za-z0-9]+(?:/[^/]+)?/?",parts.path))
+    match=re.fullmatch(r"/r/[A-Za-z0-9_]+/comments/[A-Za-z0-9]+/((?:[A-Za-z0-9._~-]|%[0-9A-Fa-f]{2})+)/?",parts.path)
+    return parts.scheme=="https" and parts.netloc=="www.reddit.com" and bool(match) and match.group(1) not in (".","..")
 
 def aliases_for(competitors):
     if isinstance(competitors,dict): competitors=[{"name":name,"aliases":aliases if isinstance(aliases,list) else []} for name,aliases in competitors.items()]

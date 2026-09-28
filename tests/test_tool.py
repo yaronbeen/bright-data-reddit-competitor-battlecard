@@ -51,6 +51,11 @@ def test_comparison_evidence_requires_canonical_reddit_post_urls():
         "https://www.reddit.com/r/x/about/",
         "https://www.reddit.com/comments/1/post/",
         "https://www.reddit.com/r/x/comments/not-a-post-id/",
+        "https://www.reddit.com/r/x/comments/1/",
+        "https://www.reddit.com/r/x/comments/1//",
+        "https://www.reddit.com/r/x/comments/1/invalid slug/",
+        "https://www.reddit.com/r/x/comments/1/post/?source=share",
+        "https://www.reddit.com/r/x/comments/1/post/#comment",
         "https://www.reddit.com/r/x/comments/1/post/extra/path/",
         "https://www.reddit.com:443/r/x/comments/1/post/",
     )
@@ -58,8 +63,9 @@ def test_comparison_evidence_requires_canonical_reddit_post_urls():
         try: tool.compare([{**base,"url":url}])
         except ValueError: pass
         else: assert False, f"noncanonical evidence URL was accepted: {url}"
-    valid={**base,"url":"https://www.reddit.com/r/x/comments/1/post/"}
-    assert tool.compare([valid])[0]["source_url"]==valid["url"]
+    for url in ("https://www.reddit.com/r/x/comments/1/post/","https://www.reddit.com/r/x/comments/abc123/title-slug_2/","https://www.reddit.com/r/x/comments/abc123/title%20slug/"):
+        valid={**base,"url":url}
+        assert tool.compare([valid])[0]["source_url"]==valid["url"]
 
 def test_invalid_collected_source_url_cannot_override_valid_post_url():
     record={"url":"https://www.reddit.com/r/x/comments/1/post/","source_url":"https://www.reddit.com.evil.example/r/x/comments/1/post/","text":"Acme pricing beats Beta","competitors":["Acme","Beta"]}
