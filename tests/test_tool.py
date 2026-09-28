@@ -49,6 +49,9 @@ def test_comparison_evidence_requires_canonical_reddit_post_urls():
         "https://www.reddit.com.evil.example/r/x/comments/1/post/",
         credentialed_url,
         "https://www.reddit.com/r/x/about/",
+        "https://www.reddit.com/comments/1/post/",
+        "https://www.reddit.com/r/x/comments/not-a-post-id/",
+        "https://www.reddit.com/r/x/comments/1/post/extra/path/",
         "https://www.reddit.com:443/r/x/comments/1/post/",
     )
     for url in invalid_urls:
@@ -82,6 +85,10 @@ def test_comment_collection_rejects_duplicate_or_over_cap_inputs_without_request
         try: tool.collect_comments(urls,"secret")
         except ValueError: pass
         else: assert False, "invalid collection plan must fail before request"
+    for invalid_url in ("https://www.reddit.com/comments/1/post/","https://www.reddit.com/r/x/comments/not-a-post-id/"):
+        try: tool.collect_comments([invalid_url],"secret")
+        except ValueError: pass
+        else: assert False, "noncanonical Reddit path must be rejected before request"
 
 def test_comments_malformed_and_202_responses_are_structured(monkeypatch):
     class Response:
